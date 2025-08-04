@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure View</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: white;
+      font-family: sans-serif;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    #app, #no-content {
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      color: #555;
+    }
+
+    #app {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Your actual content in a secure iframe -->
+   <iframe
+  src="https://final-submission.zeabur.app/"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+  style="width:100%; height:100%; border:none;"
+></iframe>
+
+  </div>
+
+  <div id="no-content">no content</div>
+
+  <script>
+    const app = document.getElementById('app');
+    const noContent = document.getElementById('no-content');
+
+    const blockView = () => {
+      app.style.display = 'none';
+      noContent.style.display = 'flex';
+      console.clear();
+    };
+    function kill() {
+  document.body.innerHTML = '<h1 style="text-align:center; margin-top: 20%">no content</h1>';
+  console.clear();
+}
+
+setInterval(() => {
+  trapConsoleAccess(kill);
+  detectTampering(kill);
+  if (isDevToolsOpen() || isDebuggerPaused()) kill();
+}, 1000);
+
+    function trapConsoleAccess(trigger) {
+  const el = new Image();
+  Object.defineProperty(el, 'id', {
+    get() {
+      trigger();
+      throw new Error("Console inspection blocked");
+    }
+  });
+  console.log(el);
+}
+
+    // DevTools detection (console + resize)
+    const detectDevTools = () => {
+      const el = new Image();
+      Object.defineProperty(el, 'id', {
+        get() {
+          blockView();
+          throw new Error("DevTools blocked");
+        }
+      });
+      console.log(el);
+
+      const devToolOpen = window.outerWidth - window.innerWidth > 160 ||
+                          window.outerHeight - window.innerHeight > 160;
+      if (devToolOpen) blockView();
+    };
+
+    // Keyboard shortcut blocking
+    document.addEventListener('keydown', e => {
+      const key = e.key.toUpperCase();
+      const ctrl = e.ctrlKey || e.metaKey;
+      const blockedKeys = ['F12', 'U', 'S', 'I', 'J', 'C', 'K', 'M', 'P'];
+
+      if (
+        key.startsWith('F') ||
+        ctrl && blockedKeys.includes(key) ||
+        e.key === 'PrintScreen'
+      ) {
+        e.preventDefault();
+        blockView();
+      }
+    });
+
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      blockView();
+    });
+
+    setInterval(detectDevTools, 1000);
+   
+    
+  </script>
+</body>
+</html>
